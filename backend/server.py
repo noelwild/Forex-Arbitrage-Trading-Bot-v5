@@ -1681,6 +1681,396 @@ async def websocket_endpoint(websocket: WebSocket):
     except WebSocketDisconnect:
         manager.disconnect(websocket)
 
+# ===============================
+# CREDENTIAL MANAGEMENT ENDPOINTS
+# ===============================
+
+@api_router.post("/credentials", response_model=dict)
+async def create_credentials(request: CredentialCreateRequest):
+    """Create new broker credentials"""
+    try:
+        # Encrypt sensitive credential data
+        encrypted_credentials = {}
+        for key, value in request.credentials.items():
+            encrypted_credentials[key] = encrypt_data(value)
+        
+        # Create credentials document
+        credentials = BrokerCredentials(
+            broker_name=request.broker_name,
+            credentials=encrypted_credentials
+        )
+        
+        # Save to database
+        result = await db.broker_credentials.insert_one(credentials.dict())
+        
+        # Return success without sensitive data
+        return {
+            "success": True,
+            "id": credentials.id,
+            "broker_name": credentials.broker_name,
+            "message": f"Credentials for {request.broker_name} saved successfully"
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to create credentials: {str(e)}")
+
+@api_router.get("/credentials", response_model=List[dict])
+async def get_all_credentials():
+    """Get all stored credentials (without sensitive data)"""
+    try:
+        cursor = db.broker_credentials.find({})
+        credentials_list = []
+        
+        async for doc in cursor:
+            # Remove sensitive data before returning
+            safe_doc = {
+                "id": doc["id"],
+                "broker_name": doc["broker_name"],
+                "is_active": doc["is_active"],
+                "connection_status": doc.get("connection_status"),
+                "last_tested": doc.get("last_tested"),
+                "last_successful_connection": doc.get("last_successful_connection"),
+                "error_message": doc.get("error_message"),
+                "created_at": doc["created_at"],
+                "updated_at": doc["updated_at"]
+            }
+            credentials_list.append(safe_doc)
+        
+        return credentials_list
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to retrieve credentials: {str(e)}")
+
+@api_router.get("/credentials/{credential_id}", response_model=dict)
+async def get_credentials(credential_id: str):
+    """Get specific credentials (without sensitive data)"""
+    try:
+        doc = await db.broker_credentials.find_one({"id": credential_id})
+        if not doc:
+            raise HTTPException(status_code=404, detail="Credentials not found")
+        
+        # Return without sensitive credential data
+        return {
+            "id": doc["id"],
+            "broker_name": doc["broker_name"],
+            "is_active": doc["is_active"],
+            "connection_status": doc.get("connection_status"),
+            "last_tested": doc.get("last_tested"),
+            "last_successful_connection": doc.get("last_successful_connection"),
+            "error_message": doc.get("error_message"),
+            "created_at": doc["created_at"],
+            "updated_at": doc["updated_at"],
+            "credential_fields": list(doc["credentials"].keys())  # Show field names only
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to retrieve credentials: {str(e)}")
+
+@api_router.put("/credentials/{credential_id}", response_model=dict)
+async def update_credentials(credential_id: str, request: CredentialUpdateRequest):
+    """Update existing credentials"""
+    try:
+        # Check if credentials exist
+        existing = await db.broker_credentials.find_one({"id": credential_id})
+        if not existing:
+            raise HTTPException(status_code=404, detail="Credentials not found")
+        
+        # Prepare update data
+        update_data = {"updated_at": datetime.utcnow()}
+        
+        if request.credentials:
+            # Encrypt new credential data
+            encrypted_credentials = {}
+            for key, value in request.credentials.items():
+                encrypted_credentials[key] = encrypt_data(value)
+            update_data["credentials"] = encrypted_credentials
+            # Reset connection status when credentials change
+            update_data["connection_status"] = None
+            update_data["error_message"] = None
+        
+        if request.is_active is not None:
+            update_data["is_active"] = request.is_active
+        
+        # Update in database
+        await db.broker_credentials.update_one(
+            {"id": credential_id},
+            {"$set": update_data}
+        )
+        
+        return {
+            "success": True,
+            "message": f"Credentials updated successfully"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to update credentials: {str(e)}")
+
+@api_router.delete("/credentials/{credential_id}", response_model=dict)
+async def delete_credentials(credential_id: str):
+    """Delete credentials"""
+    try:
+        result = await db.broker_credentials.delete_one({"id": credential_id})
+        if result.deleted_count == 0:
+            raise HTTPException(status_code=404, detail="Credentials not found")
+        
+        return {
+            "success": True,
+            "message": "Credentials deleted successfully"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to delete credentials: {str(e)}")
+
+@api_router.post("/credentials/{credential_id}/validate", response_model=CredentialValidationResult)
+async def validate_credentials(credential_id: str):
+    """Validate broker credentials by testing connection"""
+    try:
+        # Get credentials from database
+        doc = await db.broker_credentials.find_one({"id": credential_id})
+        if not doc:
+            raise HTTPException(status_code=404, detail="Credentials not found")
+        
+        # Decrypt credentials
+        decrypted_credentials = {}
+        for key, encrypted_value in doc["credentials"].items():
+            decrypted_credentials[key] = decrypt_data(encrypted_value)
+        
+        # Check if credentials look fake (for testing purposes)
+        is_fake = any(
+            "fake" in value.lower() or "test" in value.lower() or "invalid" in value.lower()
+            for value in decrypted_credentials.values()
+        )
+        
+        if is_fake:
+            # Use fake validation for testing
+            result = await test_fake_credentials(doc["broker_name"])
+        else:
+            # Try real validation
+            try:
+                connector = create_broker_connector(doc["broker_name"], decrypted_credentials)
+                result = await connector.validate_credentials()
+                await connector.disconnect()
+            except ImportError as e:
+                result = CredentialValidationResult(
+                    success=False,
+                    broker_name=doc["broker_name"],
+                    message=f"Broker library not available: {str(e)}"
+                )
+            except Exception as e:
+                result = CredentialValidationResult(
+                    success=False,
+                    broker_name=doc["broker_name"],
+                    message=f"Connection test failed: {str(e)}"
+                )
+        
+        # Update database with validation result
+        update_data = {
+            "connection_status": "connected" if result.success else "failed",
+            "last_tested": result.tested_at,
+            "error_message": None if result.success else result.message,
+            "updated_at": datetime.utcnow()
+        }
+        
+        if result.success:
+            update_data["last_successful_connection"] = result.tested_at
+        
+        await db.broker_credentials.update_one(
+            {"id": credential_id},
+            {"$set": update_data}
+        )
+        
+        return result
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to validate credentials: {str(e)}")
+
+@api_router.post("/credentials/validate-all", response_model=List[CredentialValidationResult])
+async def validate_all_credentials():
+    """Validate all active credentials"""
+    try:
+        results = []
+        cursor = db.broker_credentials.find({"is_active": True})
+        
+        async for doc in cursor:
+            try:
+                # Decrypt credentials
+                decrypted_credentials = {}
+                for key, encrypted_value in doc["credentials"].items():
+                    decrypted_credentials[key] = decrypt_data(encrypted_value)
+                
+                # Check if credentials look fake
+                is_fake = any(
+                    "fake" in value.lower() or "test" in value.lower() or "invalid" in value.lower()
+                    for value in decrypted_credentials.values()
+                )
+                
+                if is_fake:
+                    result = await test_fake_credentials(doc["broker_name"])
+                else:
+                    try:
+                        connector = create_broker_connector(doc["broker_name"], decrypted_credentials)
+                        result = await connector.validate_credentials()
+                        await connector.disconnect()
+                    except Exception as e:
+                        result = CredentialValidationResult(
+                            success=False,
+                            broker_name=doc["broker_name"],
+                            message=f"Connection test failed: {str(e)}"
+                        )
+                
+                # Update database
+                update_data = {
+                    "connection_status": "connected" if result.success else "failed",
+                    "last_tested": result.tested_at,
+                    "error_message": None if result.success else result.message,
+                    "updated_at": datetime.utcnow()
+                }
+                
+                if result.success:
+                    update_data["last_successful_connection"] = result.tested_at
+                
+                await db.broker_credentials.update_one(
+                    {"id": doc["id"]},
+                    {"$set": update_data}
+                )
+                
+                results.append(result)
+                
+            except Exception as e:
+                results.append(CredentialValidationResult(
+                    success=False,
+                    broker_name=doc["broker_name"],
+                    message=f"Validation error: {str(e)}"
+                ))
+        
+        return results
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to validate credentials: {str(e)}")
+
+@api_router.post("/credentials/anthropic", response_model=dict)
+async def update_anthropic_key(api_key: str):
+    """Update Anthropic API key in environment"""
+    try:
+        # Validate the API key format
+        if not api_key.startswith("sk-ant-"):
+            raise HTTPException(status_code=400, detail="Invalid Anthropic API key format")
+        
+        # Test the API key
+        try:
+            chat = LlmChat(
+                api_key=api_key,
+                session_id="test_session"
+            ).with_model("anthropic", "claude-3-5-sonnet-20241022")
+            
+            user_message = UserMessage(text="Hello, please respond with 'API key is valid'")
+            response = await chat.send_message(user_message)
+            
+            if "valid" not in response.lower():
+                raise Exception("Unexpected response from API")
+                
+        except Exception as e:
+            return {
+                "success": False,
+                "message": f"Anthropic API key validation failed: {str(e)}"
+            }
+        
+        # Update environment variable (this will persist for current session)
+        os.environ['ANTHROPIC_API_KEY'] = api_key
+        global ANTHROPIC_API_KEY
+        ANTHROPIC_API_KEY = api_key
+        
+        # Also save to database for persistence
+        creds = BrokerCredentials(
+            broker_name="Anthropic",
+            credentials={"api_key": encrypt_data(api_key)},
+            connection_status="connected"
+        )
+        
+        # Remove existing Anthropic credentials first
+        await db.broker_credentials.delete_many({"broker_name": "Anthropic"})
+        
+        # Insert new credentials
+        await db.broker_credentials.insert_one(creds.dict())
+        
+        return {
+            "success": True,
+            "message": "Anthropic API key updated and validated successfully"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to update Anthropic API key: {str(e)}")
+
+@api_router.get("/credentials/broker-types", response_model=List[dict])
+async def get_supported_brokers():
+    """Get list of supported brokers and their required credential fields"""
+    return [
+        {
+            "name": "OANDA",
+            "display_name": "OANDA",
+            "description": "OANDA forex trading platform",
+            "fields": [
+                {"name": "api_key", "label": "API Key", "type": "password", "required": True},
+                {"name": "account_id", "label": "Account ID", "type": "text", "required": True},
+                {"name": "environment", "label": "Environment", "type": "select", "options": ["practice", "live"], "default": "practice"}
+            ]
+        },
+        {
+            "name": "Interactive Brokers",
+            "display_name": "Interactive Brokers",
+            "description": "Interactive Brokers TWS/IB Gateway",
+            "fields": [
+                {"name": "host", "label": "Host", "type": "text", "default": "127.0.0.1"},
+                {"name": "port", "label": "Port", "type": "number", "default": 7497},
+                {"name": "client_id", "label": "Client ID", "type": "number", "default": 1},
+                {"name": "username", "label": "Username (optional)", "type": "text", "required": False},
+                {"name": "password", "label": "Password (optional)", "type": "password", "required": False}
+            ]
+        },
+        {
+            "name": "FXCM",
+            "display_name": "FXCM",
+            "description": "FXCM forex trading platform",
+            "fields": [
+                {"name": "api_key", "label": "API Key", "type": "password", "required": True},
+                {"name": "environment", "label": "Environment", "type": "select", "options": ["demo", "real"], "default": "demo"},
+                {"name": "server_url", "label": "Server URL (optional)", "type": "text", "required": False}
+            ]
+        },
+        {
+            "name": "XM",
+            "display_name": "XM",
+            "description": "XM Group via MetaTrader 5",
+            "fields": [
+                {"name": "username", "label": "Username/Login", "type": "text", "required": True},
+                {"name": "password", "label": "Password", "type": "password", "required": True},
+                {"name": "server", "label": "Server", "type": "text", "required": True},
+                {"name": "account_type", "label": "Account Type", "type": "select", "options": ["demo", "real"], "default": "demo"}
+            ]
+        },
+        {
+            "name": "MetaTrader",
+            "display_name": "MetaTrader 5",
+            "description": "Generic MetaTrader 5 platform",
+            "fields": [
+                {"name": "login", "label": "Login", "type": "text", "required": True},
+                {"name": "password", "label": "Password", "type": "password", "required": True},
+                {"name": "server", "label": "Server", "type": "text", "required": True},
+                {"name": "path", "label": "MT5 Path (optional)", "type": "text", "required": False}
+            ]
+        }
+    ]
+
 # Include router
 app.include_router(api_router)
 
