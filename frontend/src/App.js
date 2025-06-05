@@ -103,6 +103,8 @@ function App() {
     // Load initial data
     loadMarketData();
     loadOpportunities();
+    loadCredentials();
+    loadSupportedBrokers();
     
     return () => {
       if (websocket) {
