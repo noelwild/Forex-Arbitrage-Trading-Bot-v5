@@ -456,9 +456,22 @@ def test_claude_execute_trade():
     """Test 15: Claude-assisted trade execution"""
     global claude_config_id, opportunity_id
     
-    if not claude_config_id or not opportunity_id:
-        print("⚠️ Skipping Claude execute trade test (missing config or opportunity)")
-        return {"skipped": True, "reason": "Missing Claude config or opportunity"}
+    if not claude_config_id:
+        print("⚠️ Skipping Claude execute trade test (missing config)")
+        return {"skipped": True, "reason": "Missing Claude config"}
+    
+    # Get the latest opportunities
+    response = requests.get(f"{API_URL}/opportunities")
+    response.raise_for_status()
+    opportunities = response.json()
+    
+    if not opportunities:
+        print("⚠️ Skipping Claude execute trade test (no opportunities available)")
+        return {"skipped": True, "reason": "No opportunities available"}
+    
+    # Use the first opportunity
+    opportunity_id = opportunities[0]["id"]
+    print(f"Using opportunity with ID: {opportunity_id}")
     
     response = requests.post(f"{API_URL}/claude-execute-trade/{opportunity_id}?config_id={claude_config_id}")
     response.raise_for_status()
