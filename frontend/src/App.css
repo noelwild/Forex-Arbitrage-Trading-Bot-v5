@@ -1,38 +1,250 @@
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+
+/* Custom styles for the Forex Arbitrage Bot */
+
 .App {
-    text-align: center;
+  min-height: 100vh;
+  background-color: #f9fafb;
 }
 
-.App-logo {
-    height: 40vmin;
-    pointer-events: none;
+/* Custom animations */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }
 
-@media (prefers-reduced-motion: no-preference) {
-    .App-logo {
-        animation: App-logo-spin infinite 20s linear;
-    }
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
-.App-header {
-    background-color: #0f0f10;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    font-size: calc(10px + 2vmin);
-    color: white;
+/* Trading card styles */
+.trading-card {
+  @apply bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow;
 }
 
-.App-link {
-    color: #61dafb;
+.profit-positive {
+  @apply text-green-600 font-semibold;
 }
 
-@keyframes App-logo-spin {
-    from {
-        transform: rotate(0deg);
-    }
-    to {
-        transform: rotate(360deg);
-    }
+.profit-negative {
+  @apply text-red-600 font-semibold;
+}
+
+.profit-neutral {
+  @apply text-gray-600;
+}
+
+/* Opportunity status indicators */
+.opportunity-spatial {
+  @apply bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm font-medium;
+}
+
+.opportunity-triangular {
+  @apply bg-green-100 text-green-800 px-2 py-1 rounded text-sm font-medium;
+}
+
+.opportunity-statistical {
+  @apply bg-purple-100 text-purple-800 px-2 py-1 rounded text-sm font-medium;
+}
+
+/* Market data grid */
+.market-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+/* Real-time indicators */
+.status-indicator {
+  @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+}
+
+.status-live {
+  @apply bg-green-100 text-green-800;
+}
+
+.status-offline {
+  @apply bg-red-100 text-red-800;
+}
+
+.status-connecting {
+  @apply bg-yellow-100 text-yellow-800;
+}
+
+/* Performance metrics */
+.metric-card {
+  @apply bg-white rounded-lg p-6 shadow-sm border border-gray-200;
+}
+
+.metric-value {
+  @apply text-2xl font-bold;
+}
+
+.metric-label {
+  @apply text-sm text-gray-600 mb-1;
+}
+
+.metric-positive {
+  @apply text-green-600;
+}
+
+.metric-negative {
+  @apply text-red-600;
+}
+
+.metric-neutral {
+  @apply text-blue-600;
+}
+
+/* Trading mode indicators */
+.mode-simulation {
+  @apply bg-blue-500 text-white;
+}
+
+.mode-manual {
+  @apply bg-yellow-500 text-white;
+}
+
+.mode-autonomous {
+  @apply bg-green-500 text-white;
+}
+
+.mode-claude-assisted {
+  @apply bg-purple-500 text-white;
+}
+
+/* Claude analysis styling */
+.claude-analysis {
+  @apply bg-gray-50 p-4 rounded-lg border-l-4 border-blue-500;
+}
+
+.claude-analysis pre {
+  @apply whitespace-pre-wrap text-sm text-gray-800 font-mono;
+}
+
+/* Button styles */
+.btn-primary {
+  @apply bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-lg transition-colors;
+}
+
+.btn-secondary {
+  @apply bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-lg transition-colors;
+}
+
+.btn-success {
+  @apply bg-green-500 hover:bg-green-600 text-white font-medium py-2 px-4 rounded-lg transition-colors;
+}
+
+.btn-warning {
+  @apply bg-yellow-500 hover:bg-yellow-600 text-white font-medium py-2 px-4 rounded-lg transition-colors;
+}
+
+.btn-danger {
+  @apply bg-red-500 hover:bg-red-600 text-white font-medium py-2 px-4 rounded-lg transition-colors;
+}
+
+.btn-disabled {
+  @apply bg-gray-300 text-gray-500 cursor-not-allowed;
+}
+
+/* Form styles */
+.form-input {
+  @apply w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent;
+}
+
+.form-select {
+  @apply w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent;
+}
+
+.form-label {
+  @apply block text-sm font-medium text-gray-700 mb-2;
+}
+
+/* Table styles */
+.table-auto {
+  @apply min-w-full;
+}
+
+.table-auto th {
+  @apply px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider;
+}
+
+.table-auto td {
+  @apply px-4 py-2 whitespace-nowrap text-sm text-gray-900;
+}
+
+.table-striped tbody tr:nth-child(even) {
+  @apply bg-gray-50;
+}
+
+.table-hover tbody tr:hover {
+  @apply bg-gray-100;
+}
+
+/* Loading states */
+.loading-spinner {
+  @apply inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600;
+}
+
+.loading-text {
+  @apply text-gray-500 text-sm;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .market-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .table-responsive {
+    @apply overflow-x-auto;
+  }
+  
+  .mobile-stack {
+    @apply flex flex-col space-y-2;
+  }
+}
+
+/* Dark mode support (if needed later) */
+@media (prefers-color-scheme: dark) {
+  .dark-mode {
+    @apply bg-gray-900 text-white;
+  }
+  
+  .dark-mode .trading-card {
+    @apply bg-gray-800 border-gray-700;
+  }
+  
+  .dark-mode .metric-card {
+    @apply bg-gray-800 border-gray-700;
+  }
+}
+
+/* Custom scrollbar */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e0 #f7fafc;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #f7fafc;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #cbd5e0;
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: #a0aec0;
 }
