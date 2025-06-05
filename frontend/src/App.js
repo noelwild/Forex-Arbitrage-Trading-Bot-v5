@@ -38,6 +38,16 @@ function App() {
   const [anthropicApiKey, setAnthropicApiKey] = useState('');
   const [showCredentialForm, setShowCredentialForm] = useState(false);
 
+  // Credentials management states
+  const [credentials, setCredentials] = useState([]);
+  const [supportedBrokers, setSupportedBrokers] = useState([]);
+  const [selectedBroker, setSelectedBroker] = useState('');
+  const [credentialForm, setCredentialForm] = useState({});
+  const [isTestingCredentials, setIsTestingCredentials] = useState(false);
+  const [isCreatingCredentials, setIsCreatingCredentials] = useState(false);
+  const [anthropicApiKey, setAnthropicApiKey] = useState('');
+  const [showCredentialForm, setShowCredentialForm] = useState(false);
+
   // Configuration form state
   const [configForm, setConfigForm] = useState({
     starting_capital: 10000,
