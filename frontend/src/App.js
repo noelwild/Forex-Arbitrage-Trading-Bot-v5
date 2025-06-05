@@ -310,6 +310,181 @@ function App() {
     }
   };
 
+  // ===============================
+  // CREDENTIALS MANAGEMENT FUNCTIONS
+  // ===============================
+
+  const loadCredentials = async () => {
+    try {
+      const response = await fetch(`${API}/credentials`);
+      const data = await response.json();
+      setCredentials(data);
+    } catch (error) {
+      console.error('Error loading credentials:', error);
+    }
+  };
+
+  const loadSupportedBrokers = async () => {
+    try {
+      const response = await fetch(`${API}/credentials/broker-types`);
+      const data = await response.json();
+      setSupportedBrokers(data);
+    } catch (error) {
+      console.error('Error loading supported brokers:', error);
+    }
+  };
+
+  const createCredentials = async () => {
+    if (!selectedBroker || !credentialForm) {
+      alert('Please select a broker and fill in credentials');
+      return;
+    }
+
+    setIsCreatingCredentials(true);
+    try {
+      const response = await fetch(`${API}/credentials`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          broker_name: selectedBroker,
+          credentials: credentialForm
+        }),
+      });
+
+      const data = await response.json();
+      
+      if (response.ok) {
+        alert(data.message);
+        setShowCredentialForm(false);
+        setSelectedBroker('');
+        setCredentialForm({});
+        loadCredentials();
+      } else {
+        alert(`Failed to create credentials: ${data.detail}`);
+      }
+    } catch (error) {
+      console.error('Error creating credentials:', error);
+      alert('Error creating credentials');
+    }
+    setIsCreatingCredentials(false);
+  };
+
+  const testCredentials = async (credentialId) => {
+    setIsTestingCredentials(true);
+    try {
+      const response = await fetch(`${API}/credentials/${credentialId}/validate`, {
+        method: 'POST',
+      });
+
+      const data = await response.json();
+      
+      if (response.ok) {
+        const status = data.success ? 'SUCCESS' : 'FAILED';
+        const details = data.connection_details ? 
+          `\n\nConnection Details:\n${JSON.stringify(data.connection_details, null, 2)}` : '';
+        
+        alert(`${status}: ${data.message}${details}`);
+        loadCredentials(); // Refresh the list
+      } else {
+        alert(`Test failed: ${data.detail}`);
+      }
+    } catch (error) {
+      console.error('Error testing credentials:', error);
+      alert('Error testing credentials');
+    }
+    setIsTestingCredentials(false);
+  };
+
+  const testAllCredentials = async () => {
+    setIsTestingCredentials(true);
+    try {
+      const response = await fetch(`${API}/credentials/validate-all`, {
+        method: 'POST',
+      });
+
+      const data = await response.json();
+      
+      if (response.ok) {
+        const results = data.map(result => 
+          `${result.broker_name}: ${result.success ? 'SUCCESS' : 'FAILED'} - ${result.message}`
+        ).join('\n');
+        
+        alert(`Validation Results:\n\n${results}`);
+        loadCredentials(); // Refresh the list
+      } else {
+        alert(`Test failed: ${data.detail}`);
+      }
+    } catch (error) {
+      console.error('Error testing all credentials:', error);
+      alert('Error testing all credentials');
+    }
+    setIsTestingCredentials(false);
+  };
+
+  const deleteCredentials = async (credentialId, brokerName) => {
+    if (!confirm(`Are you sure you want to delete credentials for ${brokerName}?`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API}/credentials/${credentialId}`, {
+        method: 'DELETE',
+      });
+
+      const data = await response.json();
+      
+      if (response.ok) {
+        alert(data.message);
+        loadCredentials();
+      } else {
+        alert(`Failed to delete credentials: ${data.detail}`);
+      }
+    } catch (error) {
+      console.error('Error deleting credentials:', error);
+      alert('Error deleting credentials');
+    }
+  };
+
+  const updateAnthropicKey = async () => {
+    if (!anthropicApiKey) {
+      alert('Please enter an Anthropic API key');
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API}/credentials/anthropic?api_key=${encodeURIComponent(anthropicApiKey)}`, {
+        method: 'POST',
+      });
+
+      const data = await response.json();
+      
+      if (response.ok) {
+        alert(data.message);
+        setAnthropicApiKey('');
+        loadCredentials();
+      } else {
+        alert(`Failed to update Anthropic key: ${data.message}`);
+      }
+    } catch (error) {
+      console.error('Error updating Anthropic key:', error);
+      alert('Error updating Anthropic key');
+    }
+  };
+
+  const handleBrokerSelect = (brokerName) => {
+    setSelectedBroker(brokerName);
+    const broker = supportedBrokers.find(b => b.name === brokerName);
+    if (broker) {
+      const initialForm = {};
+      broker.fields.forEach(field => {
+        initialForm[field.name] = field.default || '';
+      });
+      setCredentialForm(initialForm);
+    }
+  };
+
   const createConfig = async () => {
     try {
       const response = await fetch(`${API}/config`, {
