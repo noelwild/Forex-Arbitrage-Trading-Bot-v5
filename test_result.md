@@ -372,9 +372,8 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Claude AI Integration"
-  stuck_tasks:
-    - "Claude AI Integration"
+    - "All backend tests passing"
+  stuck_tasks: []
   test_all: true
   test_priority: "high_first"
 
