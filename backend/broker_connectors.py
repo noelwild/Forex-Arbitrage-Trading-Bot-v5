@@ -29,12 +29,33 @@ try:
     FXCM_AVAILABLE = True
 except ImportError:
     FXCM_AVAILABLE = False
+    # Create dummy module
+    class fxcmpy:
+        class fxcmpy:
+            pass
 
 try:
     import MetaTrader5 as mt5
     MT5_AVAILABLE = True
 except ImportError:
     MT5_AVAILABLE = False
+    # Create dummy module
+    class mt5:
+        @staticmethod
+        def initialize():
+            return False
+        @staticmethod
+        def login(*args, **kwargs):
+            return False
+        @staticmethod
+        def shutdown():
+            pass
+        @staticmethod
+        def last_error():
+            return "MetaTrader5 not available"
+        @staticmethod
+        def account_info():
+            return None
 
 from .credential_models import (
     OANDACredentials, InteractiveBrokersCredentials, 
