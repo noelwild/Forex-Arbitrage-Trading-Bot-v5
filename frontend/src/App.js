@@ -1895,6 +1895,7 @@ function App() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {activeTab === 'dashboard' && renderDashboard()}
         {activeTab === 'configuration' && renderConfiguration()}
+        {activeTab === 'credentials' && renderCredentials()}
         {activeTab === 'positions' && renderPositions()}
         {activeTab === 'trade-history' && renderTradeHistory()}
         {activeTab === 'market-data' && renderMarketData()}
