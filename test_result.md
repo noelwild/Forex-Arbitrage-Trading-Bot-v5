@@ -369,9 +369,9 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Full application testing completed"
-    - "All core features working properly"
-  stuck_tasks: []
+    - "Claude AI Integration"
+  stuck_tasks:
+    - "Claude AI Integration"
   test_all: true
   test_priority: "high_first"
 
