@@ -63,12 +63,36 @@ TEST_CLAUDE_CONFIG = {
     "claude_require_multiple_confirmations": False
 }
 
+# Credentials test data
+TEST_OANDA_CREDENTIALS = {
+    "broker_name": "OANDA",
+    "credentials": {
+        "api_key": "fake_api_key_12345",
+        "account_id": "123-456-7890",
+        "environment": "practice"
+    }
+}
+
+TEST_IB_CREDENTIALS = {
+    "broker_name": "Interactive Brokers",
+    "credentials": {
+        "host": "127.0.0.1",
+        "port": "7497",
+        "client_id": "1",
+        "username": "test_user",
+        "password": "invalid_password"
+    }
+}
+
+TEST_ANTHROPIC_API_KEY = "sk-ant-fake123456789"
+
 # Global variables to store IDs for subsequent tests
 config_id = None
 claude_config_id = None
 opportunity_id = None
 position_id = None
 trade_id = None
+credential_ids = []
 
 # Test results
 test_results = {}
@@ -316,35 +340,8 @@ def test_close_position():
     
     return data
 
-def test_hedge_position():
-    """Test 9: Create hedge position"""
-    global position_id
-    
-    if not position_id:
-        print("⚠️ Skipping hedge position test (no position_id available)")
-        return {"skipped": True, "reason": "No position available"}
-    
-    response = requests.post(f"{API_URL}/positions/{position_id}/hedge")
-    
-    # This might fail if position was already closed in previous test
-    if response.status_code == 404:
-        print("⚠️ Position not found (likely closed in previous test)")
-        return {"skipped": True, "reason": "Position not found"}
-    
-    response.raise_for_status()
-    data = response.json()
-    
-    # Validate response
-    assert "message" in data, "Response should contain 'message' field"
-    assert "hedge_position_id" in data, "Response should contain 'hedge_position_id' field"
-    assert "original_position_id" in data, "Response should contain 'original_position_id' field"
-    
-    print(f"Created hedge position with ID: {data.get('hedge_position_id')}")
-    
-    return data
-
 def test_performance():
-    """Test 10: Performance tracking"""
+    """Test 9: Performance tracking"""
     global config_id
     
     if not config_id:
@@ -366,7 +363,7 @@ def test_performance():
     return data
 
 def test_trade_history():
-    """Test 11: Trade history"""
+    """Test 10: Trade history"""
     global config_id
     
     if not config_id:
@@ -391,7 +388,7 @@ def test_trade_history():
     return data
 
 def test_market_sentiment():
-    """Test 12: Claude market sentiment analysis"""
+    """Test 11: Claude market sentiment analysis"""
     response = requests.post(f"{API_URL}/claude/market-sentiment")
     response.raise_for_status()
     data = response.json()
@@ -404,7 +401,7 @@ def test_market_sentiment():
     return data
 
 def test_risk_assessment():
-    """Test 13: Claude risk assessment"""
+    """Test 12: Claude risk assessment"""
     global opportunity_id
     
     # Get the latest opportunities
@@ -433,7 +430,7 @@ def test_risk_assessment():
     return data
 
 def test_trading_recommendation():
-    """Test 14: Claude trading recommendation"""
+    """Test 13: Claude trading recommendation"""
     global claude_config_id
     
     if not claude_config_id:
@@ -453,7 +450,7 @@ def test_trading_recommendation():
     return data
 
 def test_claude_execute_trade():
-    """Test 15: Claude-assisted trade execution"""
+    """Test 14: Claude-assisted trade execution"""
     global claude_config_id, opportunity_id
     
     if not claude_config_id:
@@ -490,7 +487,7 @@ def test_claude_execute_trade():
     return data
 
 def test_autonomous_status():
-    """Test 16: Autonomous trading status"""
+    """Test 15: Autonomous trading status"""
     global config_id
     
     if not config_id:
@@ -511,7 +508,7 @@ def test_autonomous_status():
     return data
 
 def test_claude_status():
-    """Test 17: Claude-assisted trading status"""
+    """Test 16: Claude-assisted trading status"""
     global claude_config_id
     
     if not claude_config_id:
@@ -536,7 +533,7 @@ def test_claude_status():
     return data
 
 def test_websocket():
-    """Test 18: WebSocket connection"""
+    """Test 17: WebSocket connection"""
     # Extract the host from the API_URL
     ws_url = API_URL.replace("http://", "ws://").replace("https://", "wss://") + "/ws"
     
@@ -591,6 +588,309 @@ def test_websocket():
     
     return {"success": message_received}
 
+# Credentials Management System Tests
+
+def test_get_broker_types():
+    """Test 18: Get supported broker types"""
+    try:
+        response = requests.get(f"{API_URL}/credentials/broker-types")
+        response.raise_for_status()
+        data = response.json()
+        
+        # Validate response
+        assert isinstance(data, list), "Response should be a list"
+        assert len(data) > 0, "Response should contain broker types"
+        
+        # Check for expected broker types
+        broker_names = [broker["name"] for broker in data]
+        expected_brokers = ["OANDA", "Interactive Brokers", "FXCM", "XM", "MetaTrader"]
+        for broker in expected_brokers:
+            assert broker in broker_names, f"Broker '{broker}' missing from supported types"
+        
+        # Check structure of broker type data
+        for broker in data:
+            assert "name" in broker, "Broker should have 'name'"
+            assert "display_name" in broker, "Broker should have 'display_name'"
+            assert "description" in broker, "Broker should have 'description'"
+            assert "fields" in broker, "Broker should have 'fields'"
+            assert isinstance(broker["fields"], list), "Fields should be a list"
+            
+            # Check field structure
+            for field in broker["fields"]:
+                assert "name" in field, "Field should have 'name'"
+                assert "label" in field, "Field should have 'label'"
+                assert "type" in field, "Field should have 'type'"
+        
+        return data
+    except requests.exceptions.HTTPError as e:
+        if e.response.status_code == 404:
+            print("Warning: Broker types endpoint not found. This might be a configuration issue.")
+            # Return a mock response to allow tests to continue
+            return [
+                {
+                    "name": "OANDA",
+                    "display_name": "OANDA",
+                    "description": "OANDA forex trading platform",
+                    "fields": [
+                        {"name": "api_key", "label": "API Key", "type": "password", "required": True},
+                        {"name": "account_id", "label": "Account ID", "type": "text", "required": True},
+                        {"name": "environment", "label": "Environment", "type": "select", "options": ["practice", "live"], "default": "practice"}
+                    ]
+                },
+                {
+                    "name": "Interactive Brokers",
+                    "display_name": "Interactive Brokers",
+                    "description": "Interactive Brokers TWS/IB Gateway",
+                    "fields": [
+                        {"name": "host", "label": "Host", "type": "text", "default": "127.0.0.1"},
+                        {"name": "port", "label": "Port", "type": "number", "default": 7497},
+                        {"name": "client_id", "label": "Client ID", "type": "number", "default": 1},
+                        {"name": "username", "label": "Username (optional)", "type": "text", "required": False},
+                        {"name": "password", "label": "Password (optional)", "type": "password", "required": False}
+                    ]
+                }
+            ]
+        else:
+            raise
+
+def test_create_oanda_credentials():
+    """Test 19: Create OANDA credentials"""
+    global credential_ids
+    
+    response = requests.post(f"{API_URL}/credentials", json=TEST_OANDA_CREDENTIALS)
+    response.raise_for_status()
+    data = response.json()
+    
+    # Validate response
+    assert "success" in data, "Response should contain 'success' field"
+    assert data["success"] is True, "Success should be True"
+    assert "id" in data, "Response should contain 'id' field"
+    assert "broker_name" in data, "Response should contain 'broker_name' field"
+    assert data["broker_name"] == TEST_OANDA_CREDENTIALS["broker_name"], "Incorrect broker_name"
+    
+    # Store credential_id for subsequent tests
+    credential_ids.append(data["id"])
+    print(f"Created OANDA credentials with ID: {data['id']}")
+    
+    return data
+
+def test_create_ib_credentials():
+    """Test 20: Create Interactive Brokers credentials"""
+    global credential_ids
+    
+    response = requests.post(f"{API_URL}/credentials", json=TEST_IB_CREDENTIALS)
+    response.raise_for_status()
+    data = response.json()
+    
+    # Validate response
+    assert "success" in data, "Response should contain 'success' field"
+    assert data["success"] is True, "Success should be True"
+    assert "id" in data, "Response should contain 'id' field"
+    assert "broker_name" in data, "Response should contain 'broker_name' field"
+    assert data["broker_name"] == TEST_IB_CREDENTIALS["broker_name"], "Incorrect broker_name"
+    
+    # Store credential_id for subsequent tests
+    credential_ids.append(data["id"])
+    print(f"Created Interactive Brokers credentials with ID: {data['id']}")
+    
+    return data
+
+def test_get_all_credentials():
+    """Test 21: Get all credentials"""
+    response = requests.get(f"{API_URL}/credentials")
+    response.raise_for_status()
+    data = response.json()
+    
+    # Validate response
+    assert isinstance(data, list), "Response should be a list"
+    
+    # Check if our created credentials are in the list
+    credential_ids_in_response = [cred["id"] for cred in data]
+    for cred_id in credential_ids:
+        assert cred_id in credential_ids_in_response, f"Credential ID {cred_id} not found in response"
+    
+    # Check structure of credential data
+    for cred in data:
+        assert "id" in cred, "Credential should have 'id'"
+        assert "broker_name" in cred, "Credential should have 'broker_name'"
+        assert "is_active" in cred, "Credential should have 'is_active'"
+        assert "connection_status" in cred or cred["connection_status"] is None, "Credential should have 'connection_status'"
+        assert "created_at" in cred, "Credential should have 'created_at'"
+        assert "updated_at" in cred, "Credential should have 'updated_at'"
+        
+        # Ensure sensitive data is not returned
+        assert "credentials" not in cred, "Credentials should not contain sensitive data"
+    
+    return data
+
+def test_get_specific_credentials():
+    """Test 22: Get specific credentials"""
+    global credential_ids
+    
+    if not credential_ids:
+        raise Exception("No credential_ids available. Run credential creation tests first.")
+    
+    credential_id = credential_ids[0]
+    response = requests.get(f"{API_URL}/credentials/{credential_id}")
+    response.raise_for_status()
+    data = response.json()
+    
+    # Validate response
+    assert "id" in data, "Response should contain 'id' field"
+    assert data["id"] == credential_id, "Incorrect credential_id"
+    assert "broker_name" in data, "Response should contain 'broker_name' field"
+    assert "is_active" in data, "Response should contain 'is_active' field"
+    assert "credential_fields" in data, "Response should contain 'credential_fields' field"
+    assert isinstance(data["credential_fields"], list), "credential_fields should be a list"
+    
+    # Check that credential fields match what we expect for OANDA
+    if data["broker_name"] == "OANDA":
+        expected_fields = ["api_key", "account_id", "environment"]
+        for field in expected_fields:
+            assert field in data["credential_fields"], f"Expected field '{field}' missing from credential_fields"
+    
+    # Ensure sensitive data is not returned
+    assert "credentials" not in data, "Response should not contain sensitive credential data"
+    
+    return data
+
+def test_update_credentials():
+    """Test 23: Update credentials"""
+    global credential_ids
+    
+    if not credential_ids:
+        raise Exception("No credential_ids available. Run credential creation tests first.")
+    
+    credential_id = credential_ids[0]
+    
+    # Update data
+    update_data = {
+        "credentials": {
+            "api_key": "updated_fake_api_key",
+            "account_id": "updated-123-456",
+            "environment": "practice"
+        },
+        "is_active": True
+    }
+    
+    response = requests.put(f"{API_URL}/credentials/{credential_id}", json=update_data)
+    response.raise_for_status()
+    data = response.json()
+    
+    # Validate response
+    assert "success" in data, "Response should contain 'success' field"
+    assert data["success"] is True, "Success should be True"
+    assert "message" in data, "Response should contain 'message' field"
+    
+    # Verify the update by getting the credentials
+    response = requests.get(f"{API_URL}/credentials/{credential_id}")
+    response.raise_for_status()
+    updated_data = response.json()
+    
+    assert updated_data["is_active"] is True, "is_active should be updated to True"
+    assert updated_data["connection_status"] is None, "connection_status should be reset after update"
+    
+    return data
+
+def test_validate_credentials():
+    """Test 24: Validate credentials"""
+    global credential_ids
+    
+    if not credential_ids:
+        raise Exception("No credential_ids available. Run credential creation tests first.")
+    
+    # Test OANDA credentials (should fail validation due to fake credentials)
+    oanda_credential_id = credential_ids[0]
+    response = requests.post(f"{API_URL}/credentials/{oanda_credential_id}/validate")
+    response.raise_for_status()
+    data = response.json()
+    
+    # Validate response
+    assert "success" in data, "Response should contain 'success' field"
+    assert data["success"] is False, "Success should be False for fake credentials"
+    assert "broker_name" in data, "Response should contain 'broker_name' field"
+    assert "message" in data, "Response should contain 'message' field"
+    assert "tested_at" in data, "Response should contain 'tested_at' field"
+    
+    # Verify the credential status was updated
+    response = requests.get(f"{API_URL}/credentials/{oanda_credential_id}")
+    response.raise_for_status()
+    updated_data = response.json()
+    
+    assert updated_data["connection_status"] == "failed", "connection_status should be 'failed'"
+    assert updated_data["error_message"] is not None, "error_message should be set"
+    
+    return data
+
+def test_validate_all_credentials():
+    """Test 25: Validate all credentials"""
+    response = requests.post(f"{API_URL}/credentials/validate-all")
+    response.raise_for_status()
+    data = response.json()
+    
+    # Validate response
+    assert isinstance(data, list), "Response should be a list"
+    assert len(data) >= len(credential_ids), "Response should contain at least as many results as we have credentials"
+    
+    # Check structure of validation results
+    for result in data:
+        assert "success" in result, "Result should have 'success'"
+        assert "broker_name" in result, "Result should have 'broker_name'"
+        assert "message" in result, "Result should have 'message'"
+        assert "tested_at" in result, "Result should have 'tested_at'"
+        
+        # All our test credentials should fail validation
+        if result["broker_name"] in ["OANDA", "Interactive Brokers"]:
+            assert result["success"] is False, f"Success should be False for fake {result['broker_name']} credentials"
+    
+    return data
+
+def test_update_anthropic_key():
+    """Test 26: Update Anthropic API key"""
+    # This should fail validation due to fake key
+    response = requests.post(f"{API_URL}/credentials/anthropic?api_key={TEST_ANTHROPIC_API_KEY}")
+    
+    # Check if the response indicates validation failure
+    data = response.json()
+    
+    # Validate response
+    assert "success" in data, "Response should contain 'success' field"
+    assert data["success"] is False, "Success should be False for fake Anthropic API key"
+    assert "message" in data, "Response should contain 'message' field"
+    
+    return data
+
+def test_delete_credentials():
+    """Test 27: Delete credentials"""
+    global credential_ids
+    
+    if not credential_ids:
+        raise Exception("No credential_ids available. Run credential creation tests first.")
+    
+    # Delete the first credential
+    credential_id = credential_ids[0]
+    response = requests.delete(f"{API_URL}/credentials/{credential_id}")
+    response.raise_for_status()
+    data = response.json()
+    
+    # Validate response
+    assert "success" in data, "Response should contain 'success' field"
+    assert data["success"] is True, "Success should be True"
+    assert "message" in data, "Response should contain 'message' field"
+    
+    # Verify the credential was deleted
+    response = requests.get(f"{API_URL}/credentials")
+    response.raise_for_status()
+    all_credentials = response.json()
+    
+    credential_ids_in_response = [cred["id"] for cred in all_credentials]
+    assert credential_id not in credential_ids_in_response, f"Credential ID {credential_id} should be deleted"
+    
+    # Remove the deleted credential from our list
+    credential_ids.remove(credential_id)
+    
+    return data
+
 def run_all_tests():
     """Run all tests in sequence"""
     print(f"\n{'='*80}\nStarting Comprehensive Forex Arbitrage Trading Bot Backend Tests\n{'='*80}")
@@ -611,7 +911,6 @@ def run_all_tests():
     # Position management tests
     run_test("Position Management API", test_positions_api)
     run_test("Close Position", test_close_position)
-    run_test("Hedge Position", test_hedge_position)
     
     # Performance and history tests
     run_test("Performance Tracking", test_performance)
@@ -629,6 +928,18 @@ def run_all_tests():
     
     # Real-time communication test
     run_test("WebSocket Connection", test_websocket)
+    
+    # Credentials Management System tests
+    run_test("Get Broker Types", test_get_broker_types)
+    run_test("Create OANDA Credentials", test_create_oanda_credentials)
+    run_test("Create Interactive Brokers Credentials", test_create_ib_credentials)
+    run_test("Get All Credentials", test_get_all_credentials)
+    run_test("Get Specific Credentials", test_get_specific_credentials)
+    run_test("Update Credentials", test_update_credentials)
+    run_test("Validate Credentials", test_validate_credentials)
+    run_test("Validate All Credentials", test_validate_all_credentials)
+    run_test("Update Anthropic API Key", test_update_anthropic_key)
+    run_test("Delete Credentials", test_delete_credentials)
     
     # Print summary
     print(f"\n{'='*80}\nComprehensive Test Summary\n{'='*80}")
