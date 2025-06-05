@@ -303,6 +303,18 @@ backend:
           agent: "main"
           comment: "Autonomous trading with configurable parameters and safety limits working"
 
+  - task: "Credentials Management System"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "Comprehensive testing of credentials management system completed. All 10 tests passed. The system correctly handles creating, retrieving, updating, deleting, and validating broker credentials. Fake credentials are properly identified and fail validation as expected. Credentials are properly encrypted in the database. Minor issue: '/api/credentials/broker-types' endpoint returns 404 error."
+
 frontend:
   - task: "React Frontend Application"
     implemented: true
