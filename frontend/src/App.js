@@ -1899,7 +1899,6 @@ function App() {
         {activeTab === 'positions' && renderPositions()}
         {activeTab === 'trade-history' && renderTradeHistory()}
         {activeTab === 'market-data' && renderMarketData()}
-        {activeTab === 'market-data' && renderMarketData()}
       </main>
     </div>
   );
