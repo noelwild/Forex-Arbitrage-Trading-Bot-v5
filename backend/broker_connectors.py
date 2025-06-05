@@ -18,6 +18,11 @@ try:
     IB_AVAILABLE = True
 except ImportError:
     IB_AVAILABLE = False
+    # Create dummy classes to avoid NameError
+    class IB:
+        pass
+    class Contract:
+        pass
 
 try:
     import fxcmpy
