@@ -407,9 +407,18 @@ def test_risk_assessment():
     """Test 13: Claude risk assessment"""
     global opportunity_id
     
-    if not opportunity_id:
-        print("⚠️ Skipping Claude risk assessment test (no opportunity_id available)")
-        return {"skipped": True, "reason": "No opportunity available"}
+    # Get the latest opportunities
+    response = requests.get(f"{API_URL}/opportunities")
+    response.raise_for_status()
+    opportunities = response.json()
+    
+    if not opportunities:
+        print("⚠️ Skipping Claude risk assessment test (no opportunities available)")
+        return {"skipped": True, "reason": "No opportunities available"}
+    
+    # Use the first opportunity
+    opportunity_id = opportunities[0]["id"]
+    print(f"Using opportunity with ID: {opportunity_id}")
     
     response = requests.post(f"{API_URL}/claude/risk-assessment/{opportunity_id}")
     response.raise_for_status()
