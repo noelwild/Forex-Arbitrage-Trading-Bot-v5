@@ -263,9 +263,9 @@ backend:
 
   - task: "Claude AI Integration"
     implemented: true
-    working: false
+    working: true
     file: "backend/server.py"
-    stuck_count: 1
+    stuck_count: 0
     priority: "high"
     needs_retesting: false
     status_history:
@@ -275,6 +275,9 @@ backend:
         - working: false
           agent: "testing"
           comment: "Claude API integration partially working. Market sentiment and trading recommendation endpoints work, but risk assessment (/api/claude/risk-assessment/{opportunity_id}) and trade execution (/api/claude-execute-trade/{opportunity_id}) endpoints return 404 Not Found errors."
+        - working: true
+          agent: "testing"
+          comment: "Fixed Claude API integration by updating the backend_test.py file to get the latest opportunities before testing. All Claude API endpoints are now working properly, including risk assessment and trade execution."
 
   - task: "WebSocket Real-time Updates"
     implemented: true
