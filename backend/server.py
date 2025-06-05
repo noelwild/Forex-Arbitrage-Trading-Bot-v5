@@ -13,6 +13,13 @@ import math
 from pathlib import Path
 from dotenv import load_dotenv
 from emergentintegrations.llm.chat import LlmChat, UserMessage
+from credential_models import (
+    BrokerCredentials, CredentialCreateRequest, CredentialUpdateRequest,
+    CredentialValidationResult, encrypt_data, decrypt_data,
+    OANDACredentials, InteractiveBrokersCredentials, FXCMCredentials,
+    XMCredentials, MetaTraderCredentials, AnthropicCredentials
+)
+from broker_connectors import create_broker_connector, test_fake_credentials
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
