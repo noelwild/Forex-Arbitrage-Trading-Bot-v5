@@ -357,11 +357,7 @@ function App() {
     setIsAnalyzing(false);
   };
 
-  // ===============================
-  // MISSING FUNCTIONS IMPLEMENTATION
-  // ===============================
-
-  const loadPositions = async (configId) => {
+  const renderDashboard = () => (
     try {
       const response = await fetch(`${API}/positions/${configId}`);
       const data = await response.json();
