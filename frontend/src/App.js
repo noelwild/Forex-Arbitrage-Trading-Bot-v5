@@ -764,7 +764,7 @@ function App() {
           {/* Auto Trading Controls */}
           <div className="mt-4 flex space-x-4">
             <button
-              onClick={() => loadAutonomousStatus(config.id)}
+              onClick={() => loadClaudeStatus(config.id)}
               className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg"
             >
               Refresh Status
