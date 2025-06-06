@@ -396,22 +396,6 @@ function App() {
     </div>
   );
 
-  const loadClaudeStatus = async (configId) => {
-    try {
-      const response = await fetch(`${API}/claude-status/${configId}`);
-      const data = await response.json();
-      setClaudeStatus(data);
-    } catch (error) {
-      console.error('Error loading Claude status:', error);
-      // Mock status for demonstration
-      setClaudeStatus({
-        is_active: true,
-        last_analysis: new Date(Date.now() - 10 * 60 * 1000).toISOString(),
-        recommendations_today: 8,
-        accepted_recommendations: 6,
-        market_sentiment: 'bullish'
-      });
-    }
   };
 
   const toggleAutonomous = async () => {
