@@ -648,51 +648,6 @@ function App() {
     }
   };
 
-  const loadTradeHistory = async (configId) => {
-    try {
-      const response = await fetch(`${API}/trades/${configId}`);
-      const data = await response.json();
-      setTrades(data.trades || []);
-    } catch (error) {
-      console.error('Error loading trade history:', error);
-      // Mock data for demonstration
-      setTrades([
-        {
-          id: 'trade1',
-          config_id: configId,
-          opportunity_id: 'opp1',
-          broker: 'OANDA',
-          currency_pairs: ['EUR/USD'],
-          type: 'spatial',
-          execution_time: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
-          entry_rate: 1.0850,
-          exit_rate: 1.0865,
-          amount: 1000,
-          profit: 15.0,
-          commission: 2.0,
-          net_profit: 13.0,
-          status: 'completed'
-        },
-        {
-          id: 'trade2',
-          config_id: configId,
-          opportunity_id: 'opp2',
-          broker: 'FXCM',
-          currency_pairs: ['GBP/USD', 'EUR/GBP'],
-          type: 'triangular',
-          execution_time: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-          entry_rate: 1.2650,
-          exit_rate: 1.2645,
-          amount: 500,
-          profit: -5.0,
-          commission: 1.5,
-          net_profit: -6.5,
-          status: 'completed'
-        }
-      ]);
-    }
-  };
-
   const loadAutonomousStatus = async (configId) => {
     try {
       const response = await fetch(`${API}/autonomous-status/${configId}`);
