@@ -567,23 +567,6 @@ function App() {
       setPositions([
         {
           id: 'pos1',
-
-  // ===============================
-  // MISSING FUNCTIONS IMPLEMENTATION
-  // ===============================
-
-  const loadPositions = async (configId) => {
-    try {
-      const response = await fetch(`${API}/positions/${configId}`);
-      const data = await response.json();
-      setPositions(data.positions || []);
-      setBrokerBalances(data.balances || {});
-    } catch (error) {
-      console.error('Error loading positions:', error);
-      // Mock data for demonstration
-      setPositions([
-        {
-          id: 'pos1',
           config_id: configId,
           broker: 'OANDA',
           currency_pair: 'EUR/USD',
