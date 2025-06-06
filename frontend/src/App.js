@@ -602,8 +602,6 @@ function App() {
     setIsExecutingTrade(false);
   };
 
-  };
-
   const formatCurrency = (amount, currency = 'USD') => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
