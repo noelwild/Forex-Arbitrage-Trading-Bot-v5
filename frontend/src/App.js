@@ -342,30 +342,6 @@ function App() {
     }
   };
 
-  const getMarketSentiment = async () => {
-    try {
-      const response = await fetch(`${API}/positions/${positionId}/close`, {
-        method: 'POST'
-      });
-      const data = await response.json();
-      
-      if (response.ok) {
-        alert(`Position closed! P&L: ${data.realized_pnl > 0 ? '+' : ''}$${data.realized_pnl.toFixed(2)}`);
-        if (config) {
-          loadPositions(config.id);
-          loadPerformance(config.id);
-          loadTradeHistory(config.id);
-        }
-      } else {
-        alert(`Failed to close position: ${data.detail}`);
-      }
-    } catch (error) {
-      console.error('Error closing position:', error);
-      // Mock close for demonstration
-      alert('Position closed! (Demo mode)');
-      setPositions(positions.filter(p => p.id !== positionId));
-    }
-  };
 
   const hedgePosition = async (positionId) => {
     const position = positions.find(p => p.id === positionId);
@@ -621,20 +597,6 @@ function App() {
     }
   };
 
-  const getMarketSentiment = async () => {
-    setIsAnalyzing(true);
-    try {
-      const response = await fetch(`${API}/claude/market-sentiment`, {
-        method: 'POST',
-      });
-      const data = await response.json();
-      setClaudeAnalysis(data.analysis);
-    } catch (error) {
-      console.error('Error getting market sentiment:', error);
-      setClaudeAnalysis('Error getting analysis');
-    }
-    setIsAnalyzing(false);
-  };
 
   const getRiskAssessment = async (opportunityId) => {
     setIsAnalyzing(true);
