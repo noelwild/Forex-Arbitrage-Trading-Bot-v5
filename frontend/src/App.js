@@ -673,14 +673,6 @@ function App() {
     setIsExecutingTrade(false);
   };
 
-  const loadClaudeStatus = async (configId) => {
-    try {
-      const response = await fetch(`${API}/claude-status/${configId}`);
-      const data = await response.json();
-      setClaudeStatus(data);
-    } catch (error) {
-      console.error('Error loading Claude status:', error);
-    }
   };
 
   const formatCurrency = (amount, currency = 'USD') => {
