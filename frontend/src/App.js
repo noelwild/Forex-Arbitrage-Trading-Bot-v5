@@ -95,8 +95,6 @@ function App() {
     loadOpportunities();
     loadCredentials();
     loadSupportedBrokers();
-    loadCredentials();
-    loadSupportedBrokers();
     
     return () => {
       if (websocket) {
