@@ -147,49 +147,27 @@ function App() {
     }
   };
 
-  const loadPositions = async (configId) => {
+  const createConfig = async () => {
     try {
-      const response = await fetch(`${API}/positions/${configId}`);
-      const data = await response.json();
-      setPositions(data.positions || []);
-      setBrokerBalances(data.balances || {});
-    } catch (error) {
-      console.error('Error loading positions:', error);
-      // Mock data for demonstration
-      setPositions([
-        {
-          id: 'pos1',
-          config_id: configId,
-          broker: 'OANDA',
-          currency_pair: 'EUR/USD',
-          position_type: 'long',
-          amount: 1000,
-          entry_rate: 1.0850,
-          current_rate: 1.0865,
-          unrealized_pnl: 15.0,
-          opened_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()
+      const response = await fetch(`${API}/config`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
-        {
-          id: 'pos2',
-          config_id: configId,
-          broker: 'FXCM',
-          currency_pair: 'GBP/USD',
-          position_type: 'short',
-          amount: 500,
-          entry_rate: 1.2650,
-          current_rate: 1.2645,
-          unrealized_pnl: 2.5,
-          opened_at: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString()
-        }
-      ]);
-      setBrokerBalances({
-        'OANDA': { USD: 9850, EUR: 920, GBP: 0 },
-        'FXCM': { USD: 4750, EUR: 0, GBP: 395 },
-        'Interactive Brokers': { USD: 10000, EUR: 0, GBP: 0 },
-        'XM': { USD: 10000, EUR: 0, GBP: 0 },
-        'MetaTrader': { USD: 10000, EUR: 0, GBP: 0 },
-        'Plus500': { USD: 10000, EUR: 0, GBP: 0 }
+        body: JSON.stringify(configForm),
       });
+
+      const data = await response.json();
+      
+      if (response.ok) {
+        setConfig(data);
+        alert('Configuration created successfully!');
+      } else {
+        alert(`Failed to create configuration: ${data.detail}`);
+      }
+    } catch (error) {
+      console.error('Error creating config:', error);
+      alert('Error creating configuration');
     }
     try {
       const response = await fetch(`${API}/config`, {
