@@ -891,17 +891,6 @@ function App() {
     setIsExecutingTrade(false);
   };
 
-  const loadTradeHistory = async (configId) => {
-    try {
-      const response = await fetch(`${API}/trades/history/${configId}`);
-      const data = await response.json();
-      setTrades(data.trades);
-      setTradesSummary(data.summary);
-    } catch (error) {
-      console.error('Error loading trade history:', error);
-    }
-  };
-
   const loadAutonomousStatus = async (configId) => {
     try {
       const response = await fetch(`${API}/autonomous-status/${configId}`);
