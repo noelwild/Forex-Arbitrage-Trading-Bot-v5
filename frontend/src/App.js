@@ -500,24 +500,6 @@ function App() {
     setIsAnalyzing(false);
   };
 
-  const loadAutonomousStatus = async (configId) => {
-    try {
-      const response = await fetch(`${API}/autonomous-status/${configId}`);
-      const data = await response.json();
-      setAutonomousStatus(data);
-    } catch (error) {
-      console.error('Error loading autonomous status:', error);
-      // Mock status for demonstration
-      setAutonomousStatus({
-        is_active: false,
-        trades_today: 5,
-        profit_today: 45.20,
-        last_trade: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
-        success_rate: 0.78
-      });
-    }
-  };
-
   const loadClaudeStatus = async (configId) => {
     try {
       const response = await fetch(`${API}/claude-status/${configId}`);
