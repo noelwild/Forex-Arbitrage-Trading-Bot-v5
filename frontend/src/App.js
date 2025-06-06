@@ -487,8 +487,6 @@ function App() {
 
   const renderDashboard = () => (
     <div className="space-y-6">
-      // Mock data for demonstration
-      setPositions([
         {
           id: 'pos1',
           config_id: configId,
