@@ -342,7 +342,7 @@ function App() {
     }
   };
 
-  const loadPositions = async (configId) => {
+  const closePosition = async (positionId) => {
     try {
       const response = await fetch(`${API}/positions/${configId}`);
       const data = await response.json();
