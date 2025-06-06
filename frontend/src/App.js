@@ -470,30 +470,6 @@ function App() {
     </div>
   );
 
-  const hedgePosition = async (positionId) => {
-    const position = positions.find(p => p.id === positionId);
-    if (!position) return;
-
-    try {
-      const response = await fetch(`${API}/positions/${positionId}/hedge`, {
-        method: 'POST'
-      });
-      const data = await response.json();
-      
-      if (response.ok) {
-        alert(`Hedge position created! New position ID: ${data.hedge_position_id}`);
-        if (config) {
-          loadPositions(config.id);
-        }
-      } else {
-        alert(`Failed to create hedge: ${data.detail}`);
-      }
-    } catch (error) {
-      console.error('Error creating hedge:', error);
-      alert('Hedge position created! (Demo mode)');
-    }
-  };
-
   const loadTradeHistory = async (configId) => {
     try {
       const response = await fetch(`${API}/trades/${configId}`);
