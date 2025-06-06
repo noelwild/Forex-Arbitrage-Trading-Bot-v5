@@ -484,27 +484,6 @@ function App() {
     setIsAnalyzing(false);
   };
 
-  const getClaudeRecommendation = async (opportunityId) => {
-    setIsAnalyzing(true);
-    try {
-      const response = await fetch(`${API}/claude/recommendation/${opportunityId}`, {
-        method: 'POST'
-      });
-      const data = await response.json();
-      
-      if (response.ok) {
-        setClaudeAnalysis(data.recommendation);
-        alert(`Claude Recommendation: ${data.recommendation}`);
-      } else {
-        alert(`Failed to get Claude recommendation: ${data.detail}`);
-      }
-    } catch (error) {
-      console.error('Error getting Claude recommendation:', error);
-      alert('Error getting Claude recommendation');
-    }
-    setIsAnalyzing(false);
-  };
-
   const loadPositions = async (configId) => {
     try {
       const response = await fetch(`${API}/positions/${configId}`);
