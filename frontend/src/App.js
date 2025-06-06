@@ -707,16 +707,6 @@ function App() {
     setIsExecutingTrade(false);
   };
 
-  const loadAutonomousStatus = async (configId) => {
-    try {
-      const response = await fetch(`${API}/autonomous-status/${configId}`);
-      const data = await response.json();
-      setAutonomousStatus(data);
-    } catch (error) {
-      console.error('Error loading autonomous status:', error);
-    }
-  };
-
   const loadClaudeStatus = async (configId) => {
     try {
       const response = await fetch(`${API}/claude-status/${configId}`);
