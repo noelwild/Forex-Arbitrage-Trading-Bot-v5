@@ -271,7 +271,7 @@ function App() {
   };
 
   const deleteCredentials = async (credentialId, brokerName) => {
-    if (!confirm(`Are you sure you want to delete credentials for ${brokerName}?`)) {
+    if (!window.confirm(`Are you sure you want to delete credentials for ${brokerName}?`)) {
       return;
     }
 
