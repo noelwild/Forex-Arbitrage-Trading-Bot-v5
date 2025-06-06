@@ -132,6 +132,249 @@ function App() {
         },
         body: JSON.stringify(configForm),
       });
+
+      const data = await response.json();
+      
+      if (response.ok) {
+        setConfig(data);
+        alert('Configuration created successfully!');
+      } else {
+        alert(`Failed to create configuration: ${data.detail}`);
+      }
+    } catch (error) {
+      console.error('Error creating config:', error);
+      alert('Error creating configuration');
+    }
+  };
+
+  // ===============================
+  // CREDENTIALS MANAGEMENT FUNCTIONS
+  // ===============================
+
+  const loadCredentials = async () => {
+    try {
+      const response = await fetch(`${API}/credentials`);
+      const data = await response.json();
+      setCredentials(data);
+    } catch (error) {
+      console.error('Error loading credentials:', error);
+    }
+  };
+
+  const loadSupportedBrokers = async () => {
+    try {
+      const response = await fetch(`${API}/credentials/broker-types`);
+      const data = await response.json();
+      setSupportedBrokers(data);
+    } catch (error) {
+      console.error('Error loading supported brokers:', error);
+    }
+  };
+
+  const createCredentials = async () => {
+    if (!selectedBroker || !credentialForm) {
+      alert('Please select a broker and fill in credentials');
+      return;
+    }
+
+    setIsCreatingCredentials(true);
+    try {
+      const response = await fetch(`${API}/credentials`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          broker_name: selectedBroker,
+          credentials: credentialForm
+        }),
+      });
+
+      const data = await response.json();
+      
+      if (response.ok) {
+        alert(data.message);
+        setShowCredentialForm(false);
+        setSelectedBroker('');
+        setCredentialForm({});
+        loadCredentials();
+      } else {
+        alert(`Failed to create credentials: ${data.detail}`);
+      }
+    } catch (error) {
+      console.error('Error creating credentials:', error);
+      alert('Error creating credentials');
+    }
+    setIsCreatingCredentials(false);
+  };
+
+  const testCredentials = async (credentialId) => {
+    setIsTestingCredentials(true);
+    try {
+      const response = await fetch(`${API}/credentials/${credentialId}/validate`, {
+        method: 'POST',
+      });
+
+      const data = await response.json();
+      
+      if (response.ok) {
+        const status = data.success ? 'SUCCESS' : 'FAILED';
+        const details = data.connection_details ? 
+          `\n\nConnection Details:\n${JSON.stringify(data.connection_details, null, 2)}` : '';
+        
+        alert(`${status}: ${data.message}${details}`);
+        loadCredentials(); // Refresh the list
+      } else {
+        alert(`Test failed: ${data.detail}`);
+      }
+    } catch (error) {
+      console.error('Error testing credentials:', error);
+      alert('Error testing credentials');
+    }
+    setIsTestingCredentials(false);
+  };
+
+  const testAllCredentials = async () => {
+    setIsTestingCredentials(true);
+    try {
+      const response = await fetch(`${API}/credentials/validate-all`, {
+        method: 'POST',
+      });
+
+      const data = await response.json();
+      
+      if (response.ok) {
+        const results = data.map(result => 
+          `${result.broker_name}: ${result.success ? 'SUCCESS' : 'FAILED'} - ${result.message}`
+        ).join('\n');
+        
+        alert(`Validation Results:\n\n${results}`);
+        loadCredentials(); // Refresh the list
+      } else {
+        alert(`Test failed: ${data.detail}`);
+      }
+    } catch (error) {
+      console.error('Error testing all credentials:', error);
+      alert('Error testing all credentials');
+    }
+    setIsTestingCredentials(false);
+  };
+
+  const deleteCredentials = async (credentialId, brokerName) => {
+    if (!confirm(`Are you sure you want to delete credentials for ${brokerName}?`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API}/credentials/${credentialId}`, {
+        method: 'DELETE',
+      });
+
+      const data = await response.json();
+      
+      if (response.ok) {
+        alert(data.message);
+        loadCredentials();
+      } else {
+        alert(`Failed to delete credentials: ${data.detail}`);
+      }
+    } catch (error) {
+      console.error('Error deleting credentials:', error);
+      alert('Error deleting credentials');
+    }
+  };
+
+  const updateAnthropicKey = async () => {
+    if (!anthropicApiKey) {
+      alert('Please enter an Anthropic API key');
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API}/credentials/anthropic?api_key=${encodeURIComponent(anthropicApiKey)}`, {
+        method: 'POST',
+      });
+
+      const data = await response.json();
+      
+      if (response.ok) {
+        alert(data.message);
+        setAnthropicApiKey('');
+        loadCredentials();
+      } else {
+        alert(`Failed to update Anthropic key: ${data.message}`);
+      }
+    } catch (error) {
+      console.error('Error updating Anthropic key:', error);
+      alert('Error updating Anthropic key');
+    }
+  };
+
+  const handleBrokerSelect = (brokerName) => {
+    setSelectedBroker(brokerName);
+    const broker = supportedBrokers.find(b => b.name === brokerName);
+    if (broker) {
+      const initialForm = {};
+      broker.fields.forEach(field => {
+        initialForm[field.name] = field.default || '';
+      });
+      setCredentialForm(initialForm);
+    }
+  };
+
+  const loadPositions = async (configId) => {
+    try {
+      const response = await fetch(`${API}/positions/${configId}`);
+      const data = await response.json();
+      setPositions(data.positions || []);
+      setBrokerBalances(data.balances || {});
+    } catch (error) {
+      console.error('Error loading positions:', error);
+      // Mock data for demonstration
+      setPositions([
+        {
+          id: 'pos1',
+          config_id: configId,
+          broker: 'OANDA',
+          currency_pair: 'EUR/USD',
+          position_type: 'long',
+          amount: 1000,
+          entry_rate: 1.0850,
+          current_rate: 1.0865,
+          unrealized_pnl: 15.0,
+          opened_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()
+        },
+        {
+          id: 'pos2',
+          config_id: configId,
+          broker: 'FXCM',
+          currency_pair: 'GBP/USD',
+          position_type: 'short',
+          amount: 500,
+          entry_rate: 1.2650,
+          current_rate: 1.2645,
+          unrealized_pnl: 2.5,
+          opened_at: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString()
+        }
+      ]);
+      setBrokerBalances({
+        'OANDA': { USD: 9850, EUR: 920, GBP: 0 },
+        'FXCM': { USD: 4750, EUR: 0, GBP: 395 },
+        'Interactive Brokers': { USD: 10000, EUR: 0, GBP: 0 },
+        'XM': { USD: 10000, EUR: 0, GBP: 0 },
+        'MetaTrader': { USD: 10000, EUR: 0, GBP: 0 },
+        'Plus500': { USD: 10000, EUR: 0, GBP: 0 }
+      });
+    }
+  };
+    try {
+      const response = await fetch(`${API}/config`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(configForm),
+      });
       const newConfig = await response.json();
       setConfig(newConfig);
       loadPerformance(newConfig.id);
