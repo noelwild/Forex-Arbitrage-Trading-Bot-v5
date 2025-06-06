@@ -331,50 +331,6 @@ function App() {
       setCredentialForm(initialForm);
     }
   };
-    try {
-      const response = await fetch(`${API}/config`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(configForm),
-      });
-
-      const data = await response.json();
-      
-      if (response.ok) {
-        setConfig(data);
-        alert('Configuration created successfully!');
-      } else {
-        alert(`Failed to create configuration: ${data.detail}`);
-      }
-    } catch (error) {
-      console.error('Error creating config:', error);
-      alert('Error creating configuration');
-    }
-  };
-    try {
-      const response = await fetch(`${API}/config`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(configForm),
-      });
-      const newConfig = await response.json();
-      setConfig(newConfig);
-      loadPerformance(newConfig.id);
-      loadTradeHistory(newConfig.id);
-      loadPositions(newConfig.id);
-      if (newConfig.trading_mode === 'autonomous') {
-        loadAutonomousStatus(newConfig.id);
-      } else if (newConfig.trading_mode === 'claude_assisted') {
-        loadClaudeStatus(newConfig.id);
-      }
-    } catch (error) {
-      console.error('Error creating config:', error);
-    }
-  };
 
   const loadPerformance = async (configId) => {
     try {
