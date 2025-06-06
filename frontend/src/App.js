@@ -487,10 +487,6 @@ function App() {
 
   const renderDashboard = () => (
     <div className="space-y-6">
-      setPositions(data.positions || []);
-      setBrokerBalances(data.balances || {});
-    } catch (error) {
-      console.error('Error loading positions:', error);
       // Mock data for demonstration
       setPositions([
         {
