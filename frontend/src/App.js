@@ -486,9 +486,7 @@ function App() {
   };
 
   const renderDashboard = () => (
-    try {
-      const response = await fetch(`${API}/positions/${configId}`);
-      const data = await response.json();
+    <div className="space-y-6">
       setPositions(data.positions || []);
       setBrokerBalances(data.balances || {});
     } catch (error) {
