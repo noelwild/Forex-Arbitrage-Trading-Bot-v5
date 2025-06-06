@@ -144,7 +144,7 @@ function App() {
         loadTradeHistory(data.id);
         loadPositions(data.id);
         if (data.trading_mode === 'autonomous') {
-          loadAutonomousStatus(data.id);
+          loadClaudeStatus(data.id);
         } else if (data.trading_mode === 'claude_assisted') {
           loadClaudeStatus(data.id);
         }
