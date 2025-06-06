@@ -484,29 +484,6 @@ function App() {
     setIsAnalyzing(false);
   };
 
-  const executeTradeManually = async (opportunityId) => {
-    try {
-      const response = await fetch(`${API}/execute-trade/${opportunityId}`, {
-        method: 'POST'
-      });
-      const data = await response.json();
-      
-      if (response.ok) {
-        alert(`Trade executed successfully! Profit: $${data.profit.toFixed(2)}`);
-        if (config) {
-          loadPositions(config.id);
-          loadTradeHistory(config.id);
-          loadPerformance(config.id);
-        }
-      } else {
-        alert(`Failed to execute trade: ${data.detail}`);
-      }
-    } catch (error) {
-      console.error('Error executing trade:', error);
-      alert('Error executing trade');
-    }
-  };
-
   const getClaudeRecommendation = async (opportunityId) => {
     setIsAnalyzing(true);
     try {
