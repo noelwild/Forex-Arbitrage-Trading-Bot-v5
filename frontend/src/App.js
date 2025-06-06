@@ -606,6 +606,19 @@ function App() {
     setIsAnalyzing(false);
   };
 
+  const getMarketSentiment = async () => {
+    setIsAnalyzing(true);
+    try {
+      const response = await fetch(`${API}/claude/market-sentiment`, {
+        method: 'POST',
+      });
+      const data = await response.json();
+      setClaudeAnalysis(data.analysis);
+    } catch (error) {
+      console.error('Error getting market sentiment:', error);
+      setClaudeAnalysis('Error getting analysis');
+    }
+    setIsAnalyzing(false);
   };
 
   const loadPositions = async (configId) => {
