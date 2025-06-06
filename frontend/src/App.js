@@ -1634,6 +1634,226 @@ function App() {
     );
   };
 
+  const renderCredentials = () => (
+    <div className="space-y-6">
+      {/* Anthropic API Key Section */}
+      <div className="bg-white rounded-lg shadow-lg p-6">
+        <h2 className="text-2xl font-bold text-gray-900 mb-4">🤖 Anthropic Claude API Key</h2>
+        <p className="text-gray-600 mb-4">
+          Configure your Anthropic Claude API key for AI-powered trading analysis and decision making.
+        </p>
+        
+        <div className="flex space-x-4">
+          <input
+            type="password"
+            value={anthropicApiKey}
+            onChange={(e) => setAnthropicApiKey(e.target.value)}
+            placeholder="sk-ant-..."
+            className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+          />
+          <button
+            onClick={updateAnthropicKey}
+            className="bg-purple-500 hover:bg-purple-600 text-white px-6 py-3 rounded-lg"
+          >
+            Update Key
+          </button>
+        </div>
+        
+        <p className="text-sm text-gray-500 mt-2">
+          Get your API key from <a href="https://console.anthropic.com/" target="_blank" rel="noopener noreferrer" className="text-purple-600 hover:underline">Anthropic Console</a>
+        </p>
+      </div>
+
+      {/* Broker Credentials Section */}
+      <div className="bg-white rounded-lg shadow-lg p-6">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-2xl font-bold text-gray-900">🏦 Broker Credentials</h2>
+          <div className="flex space-x-2">
+            <button
+              onClick={() => setShowCredentialForm(!showCredentialForm)}
+              className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg"
+            >
+              {showCredentialForm ? 'Cancel' : 'Add Broker'}
+            </button>
+            <button
+              onClick={testAllCredentials}
+              disabled={isTestingCredentials}
+              className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg disabled:opacity-50"
+            >
+              {isTestingCredentials ? 'Testing...' : 'Test All'}
+            </button>
+          </div>
+        </div>
+
+        {/* Add Credentials Form */}
+        {showCredentialForm && (
+          <div className="mb-6 p-4 bg-gray-50 rounded-lg border">
+            <h3 className="text-lg font-semibold mb-4">Add New Broker Credentials</h3>
+            
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Select Broker
+              </label>
+              <select
+                value={selectedBroker}
+                onChange={(e) => handleBrokerSelect(e.target.value)}
+                className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Choose a broker...</option>
+                {supportedBrokers.map((broker) => (
+                  <option key={broker.name} value={broker.name}>
+                    {broker.display_name} - {broker.description}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {selectedBroker && (
+              <div className="space-y-4">
+                <h4 className="font-medium text-gray-900">
+                  {supportedBrokers.find(b => b.name === selectedBroker)?.display_name} Credentials
+                </h4>
+                
+                {supportedBrokers
+                  .find(b => b.name === selectedBroker)
+                  ?.fields.map((field) => (
+                    <div key={field.name}>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        {field.label} {field.required && <span className="text-red-500">*</span>}
+                      </label>
+                      
+                      {field.type === 'select' ? (
+                        <select
+                          value={credentialForm[field.name] || field.default || ''}
+                          onChange={(e) => setCredentialForm({
+                            ...credentialForm,
+                            [field.name]: e.target.value
+                          })}
+                          className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        >
+                          {field.options.map((option) => (
+                            <option key={option} value={option}>
+                              {option}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <input
+                          type={field.type}
+                          value={credentialForm[field.name] || field.default || ''}
+                          onChange={(e) => setCredentialForm({
+                            ...credentialForm,
+                            [field.name]: e.target.value
+                          })}
+                          placeholder={field.label}
+                          className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        />
+                      )}
+                    </div>
+                  ))}
+                
+                <div className="flex space-x-2 pt-4">
+                  <button
+                    onClick={createCredentials}
+                    disabled={isCreatingCredentials}
+                    className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg disabled:opacity-50"
+                  >
+                    {isCreatingCredentials ? 'Creating...' : 'Save Credentials'}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowCredentialForm(false);
+                      setSelectedBroker('');
+                      setCredentialForm({});
+                    }}
+                    className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Existing Credentials List */}
+        <div className="space-y-4">
+          {credentials.length === 0 ? (
+            <p className="text-gray-500 text-center py-8">
+              No broker credentials configured. Click "Add Broker" to get started.
+            </p>
+          ) : (
+            credentials.map((cred) => (
+              <div key={cred.id} className="border border-gray-200 rounded-lg p-4">
+                <div className="flex justify-between items-start">
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-3">
+                      <h3 className="text-lg font-semibold">{cred.broker_name}</h3>
+                      <span className={`px-2 py-1 rounded text-sm ${
+                        cred.connection_status === 'connected' 
+                          ? 'bg-green-100 text-green-800' 
+                          : cred.connection_status === 'failed'
+                          ? 'bg-red-100 text-red-800'
+                          : 'bg-gray-100 text-gray-800'
+                      }`}>
+                        {cred.connection_status || 'Untested'}
+                      </span>
+                      <span className={`px-2 py-1 rounded text-sm ${
+                        cred.is_active ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-600'
+                      }`}>
+                        {cred.is_active ? 'Active' : 'Inactive'}
+                      </span>
+                    </div>
+                    
+                    <div className="mt-2 text-sm text-gray-600">
+                      <p>Created: {new Date(cred.created_at).toLocaleString()}</p>
+                      {cred.last_tested && (
+                        <p>Last Tested: {new Date(cred.last_tested).toLocaleString()}</p>
+                      )}
+                      {cred.last_successful_connection && (
+                        <p>Last Success: {new Date(cred.last_successful_connection).toLocaleString()}</p>
+                      )}
+                      {cred.error_message && (
+                        <p className="text-red-600 mt-1">Error: {cred.error_message}</p>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={() => testCredentials(cred.id)}
+                      disabled={isTestingCredentials}
+                      className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm disabled:opacity-50"
+                    >
+                      {isTestingCredentials ? 'Testing...' : 'Test'}
+                    </button>
+                    <button
+                      onClick={() => deleteCredentials(cred.id, cred.broker_name)}
+                      className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Setup Instructions */}
+        <div className="mt-8 p-4 bg-blue-50 rounded-lg">
+          <h3 className="text-lg font-semibold text-blue-900 mb-3">📝 Setup Instructions</h3>
+          <div className="space-y-3 text-sm text-blue-800">
+            <div><strong>OANDA:</strong> Get API key from OANDA Developer Portal</div>
+            <div><strong>Interactive Brokers:</strong> Enable API in TWS/IB Gateway</div>
+            <div><strong>FXCM:</strong> Register for API access at FXCM Developer Portal</div>
+            <div><strong>XM/MetaTrader:</strong> Use your existing MT5 account credentials</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div className="space-y-6">
       {/* Anthropic API Key Section */}
