@@ -1634,7 +1634,7 @@ function App() {
     );
   };
 
-  const renderCredentials = () => (
+  return (
     <div className="space-y-6">
       {/* Anthropic API Key Section */}
       <div className="bg-white rounded-lg shadow-lg p-6">
