@@ -357,7 +357,6 @@ function App() {
     setIsAnalyzing(false);
   };
 
-  const loadAutonomousStatus = async (configId) => {
   const loadTradeHistory = async (configId) => {
     try {
       const response = await fetch(`${API}/trades/${configId}`);
