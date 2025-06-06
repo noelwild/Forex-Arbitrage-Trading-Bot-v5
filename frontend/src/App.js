@@ -138,6 +138,16 @@ function App() {
       if (response.ok) {
         setConfig(data);
         alert('Configuration created successfully!');
+        
+        // Load additional data after successful config creation
+        loadPerformance(data.id);
+        loadTradeHistory(data.id);
+        loadPositions(data.id);
+        if (data.trading_mode === 'autonomous') {
+          loadAutonomousStatus(data.id);
+        } else if (data.trading_mode === 'claude_assisted') {
+          loadClaudeStatus(data.id);
+        }
       } else {
         alert(`Failed to create configuration: ${data.detail}`);
       }
