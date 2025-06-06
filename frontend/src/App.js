@@ -444,30 +444,6 @@ function App() {
     setIsAnalyzing(false);
   };
 
-  const toggleAutonomous = async () => {
-    if (!config) return;
-    
-    try {
-      const response = await fetch(`${API}/toggle-autonomous/${config.id}`, {
-        method: 'POST'
-      });
-      const data = await response.json();
-      
-      if (response.ok) {
-        setAutonomousStatus(prev => ({
-          ...prev,
-          is_active: !prev.is_active
-        }));
-        alert(data.message);
-      } else {
-        alert(`Failed to toggle autonomous mode: ${data.detail}`);
-      }
-    } catch (error) {
-      console.error('Error toggling autonomous mode:', error);
-      alert('Error toggling autonomous mode');
-    }
-  };
-
   const executeTradeManually = async (opportunityId) => {
     try {
       const response = await fetch(`${API}/execute-trade/${opportunityId}`, {
