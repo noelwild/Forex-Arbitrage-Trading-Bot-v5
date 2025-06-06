@@ -440,7 +440,7 @@ function App() {
     }
   };
 
-  const getClaudeRecommendation = async (opportunityId) => {
+  const executeTradeManually = async (opportunityId) => {
     try {
       const response = await fetch(`${API}/execute-trade/${opportunityId}`, {
         method: 'POST'
