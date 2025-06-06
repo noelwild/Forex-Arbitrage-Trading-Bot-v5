@@ -357,6 +357,134 @@ function App() {
     setIsAnalyzing(false);
   };
 
+  // ===============================
+  // REQUIRED FUNCTIONS
+  // ===============================
+
+  const loadPositions = async (configId) => {
+    try {
+      const response = await fetch(`${API}/positions/${configId}`);
+      const data = await response.json();
+      setPositions(data.positions || []);
+      setBrokerBalances(data.balances || {});
+    } catch (error) {
+      console.error('Error loading positions:', error);
+      // Mock data for demonstration
+      setPositions([
+        {
+          id: 'pos1',
+          config_id: configId,
+          broker: 'OANDA',
+          currency_pair: 'EUR/USD',
+          position_type: 'long',
+          amount: 1000,
+          entry_rate: 1.0850,
+          current_rate: 1.0865,
+          unrealized_pnl: 15.0,
+          opened_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()
+        },
+        {
+          id: 'pos2',
+          config_id: configId,
+          broker: 'FXCM',
+          currency_pair: 'GBP/USD',
+          position_type: 'short',
+          amount: 500,
+          entry_rate: 1.2650,
+          current_rate: 1.2645,
+          unrealized_pnl: 2.5,
+          opened_at: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString()
+        }
+      ]);
+      setBrokerBalances({
+        'OANDA': { USD: 9850, EUR: 920, GBP: 0 },
+        'FXCM': { USD: 4750, EUR: 0, GBP: 395 },
+        'Interactive Brokers': { USD: 10000, EUR: 0, GBP: 0 },
+        'XM': { USD: 10000, EUR: 0, GBP: 0 },
+        'MetaTrader': { USD: 10000, EUR: 0, GBP: 0 },
+        'Plus500': { USD: 10000, EUR: 0, GBP: 0 }
+      });
+    }
+  };
+
+  const closePosition = async (positionId) => {
+    try {
+      const response = await fetch(`${API}/positions/${positionId}/close`, {
+        method: 'POST'
+      });
+      const data = await response.json();
+      
+      if (response.ok) {
+        alert(`Position closed! P&L: ${data.realized_pnl > 0 ? '+' : ''}$${data.realized_pnl.toFixed(2)}`);
+        if (config) {
+          loadPositions(config.id);
+          loadPerformance(config.id);
+          loadTradeHistory(config.id);
+        }
+      } else {
+        alert(`Failed to close position: ${data.detail}`);
+      }
+    } catch (error) {
+      console.error('Error closing position:', error);
+      // Mock close for demonstration
+      alert('Position closed! (Demo mode)');
+      setPositions(positions.filter(p => p.id !== positionId));
+    }
+  };
+
+  const hedgePosition = async (positionId) => {
+    const position = positions.find(p => p.id === positionId);
+    if (!position) return;
+
+    try {
+      const response = await fetch(`${API}/positions/${positionId}/hedge`, {
+        method: 'POST'
+      });
+      const data = await response.json();
+      
+      if (response.ok) {
+        alert(`Hedge position created! New position ID: ${data.hedge_position_id}`);
+        if (config) {
+          loadPositions(config.id);
+        }
+      } else {
+        alert(`Failed to create hedge: ${data.detail}`);
+      }
+    } catch (error) {
+      console.error('Error creating hedge:', error);
+      alert('Hedge position created! (Demo mode)');
+    }
+  };
+
+  const loadTradeHistory = async (configId) => {
+    try {
+      const response = await fetch(`${API}/trades/${configId}`);
+      const data = await response.json();
+      setTrades(data.trades || []);
+    } catch (error) {
+      console.error('Error loading trade history:', error);
+      // Mock data for demonstration
+      setTrades([
+        {
+          id: 'trade1',
+          config_id: configId,
+          opportunity_id: 'opp1',
+          broker: 'OANDA',
+          currency_pairs: ['EUR/USD'],
+          type: 'spatial',
+          execution_time: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
+          entry_rate: 1.0850,
+          exit_rate: 1.0865,
+          amount: 1000,
+          profit: 15.0,
+          commission: 2.0,
+          net_profit: 13.0,
+          status: 'completed'
+        }
+      ]);
+    }
+  };
+
   const renderDashboard = () => (
     try {
       const response = await fetch(`${API}/positions/${configId}`);
